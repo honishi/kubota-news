@@ -1,4 +1,5 @@
 [news]
+dry_run = false
 source_screen_names = asahi,nikkei,nhk_news,47news,yahoonewstopics,natalie_mu
 polling_interval = 300
 last_names = 久保田,森,佐野,国場
