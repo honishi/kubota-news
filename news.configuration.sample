@@ -1,0 +1,39 @@
+[news]
+source_screen_names = asahi,nikkei,nhk_news,47news,yahoonewstopics,natalie_mu
+polling_interval = 300
+last_names = 久保田,森,佐野,国場
+first_names = 学,義之,智則,雄太
+# @account
+consumer_key = xxxxx
+consumer_secret = xxxxx
+access_key = xxxxx
+access_secret = xxxxx
+
+[loggers]
+keys=root
+
+[logger_root]
+level=NOTSET
+handlers=file
+
+[handlers]
+keys=stdout,file
+
+[handler_stdout]
+class=StreamHandler
+level=NOTSET
+formatter=default
+args=(sys.stdout,)
+
+[handler_file]
+class=handlers.RotatingFileHandler
+level=NOTSET
+formatter=default
+args=(os.getcwd() + "/log/news.log", 'a', (10*1024*1024), 9)
+
+[formatters]
+keys=default
+
+[formatter_default]
+format=[%(asctime)s] [%(levelname)s] [%(threadName)s] %(message)s
+datefmt=
