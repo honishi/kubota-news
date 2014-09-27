@@ -43,6 +43,7 @@ test
 ````
 pychecker *.py news/*.py tests/*.py
 py.test
+pep8 *.py news/*.py tests/*.py
 ````
 
 license

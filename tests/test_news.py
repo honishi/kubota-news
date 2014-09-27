@@ -8,6 +8,15 @@ LAST_NAMES = u"久保田,森,佐野,国場".split(u',')
 FIRST_NAMES = u"学,義之,智則,雄太".split(u',')
 
 
+def create_names(last_names, first_names):
+    names = []
+
+    for index in xrange(len(last_names)):
+        names.append((last_names[index], first_names[index]))
+
+    return names
+
+
 @pytest.mark.parametrize(("input", "expected"), [
     (u"私は中村です。",
      u"私は久保田です。"),
@@ -29,5 +38,6 @@ FIRST_NAMES = u"学,義之,智則,雄太".split(u',')
      u"学、義之、智則、森義之、久保田学、佐野智則")
 ])
 def test_rewrite(input, expected):
-    (is_rewrited, rewrited) = news.rewrite(input, LAST_NAMES, FIRST_NAMES)
+    names = create_names(LAST_NAMES, FIRST_NAMES)
+    (is_rewrited, rewrited) = news.rewrite(input, names)
     assert (rewrited == expected)

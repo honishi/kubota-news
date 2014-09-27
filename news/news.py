@@ -3,6 +3,7 @@
 
 import logging
 import logging.config
+import random
 import re
 import time
 
@@ -13,7 +14,7 @@ import MeCab
 INITIAL_SINCE_ID = 1
 
 
-def start(source_screen_names, polling_interval, last_names, first_names,
+def start(source_screen_names, polling_interval, names,
           ckey, csecret, akey, asecret, dry_run=False):
     since_ids = {}
     for source_screen_name in source_screen_names:
@@ -42,7 +43,7 @@ def start(source_screen_names, polling_interval, last_names, first_names,
                                       .format(since_ids[source_screen_name]))
                         break
 
-                    (is_rewrited, rewrited_text) = rewrite(text, last_names, first_names)
+                    (is_rewrited, rewrited_text) = rewrite(text, names, True)
                     log_status(status_id, text, is_rewrited, rewrited_text)
 
                     if is_rewrited:
@@ -80,11 +81,14 @@ def update_status(twitter, text):
             raise
 
 
-def rewrite(original_text, last_names, first_names):
+def rewrite(original_text, names, shuffle_names=False):
     is_rewrited = False
     rewrited_text = None
 
-    replace_maps = create_replace_maps(original_text, last_names, first_names)
+    if shuffle_names:
+        random.shuffle(names)
+
+    replace_maps = create_replace_maps(original_text, names)
     # print(replace_maps)
 
     if 0 < len(replace_maps):
@@ -105,7 +109,7 @@ def rewrite(original_text, last_names, first_names):
     return (is_rewrited, rewrited_text)
 
 
-def create_replace_maps(original_text, last_names, first_names):
+def create_replace_maps(original_text, names):
     """
     returns maps between patterns and replacements.
     replace_maps = [
@@ -146,8 +150,7 @@ def create_replace_maps(original_text, last_names, first_names):
 
             if not replace_map:
                 # print(u'new')
-                last_name_repl = name_at_index(last_names, name_index)
-                first_name_repl = name_at_index(first_names, name_index)
+                (last_name_repl, first_name_repl) = name_at_index(names, name_index)
                 name_index += 1
 
                 replace_map = [(last_last_name, last_first_name),
