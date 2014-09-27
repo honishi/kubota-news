@@ -11,7 +11,7 @@ setup
 sudo apt-get install mecab mecab-ipadic-utf8 libmecab-dev
 ````
 
-*optional:* follow the commands like below to use another dictinary.
+*optional:* follow the commands like below to use another dictionary.
 ````
 sudo apt-get install mecab-naist-jdic
 sudo update-alternatives --config mecab-dictionary
