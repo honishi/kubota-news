@@ -10,7 +10,6 @@ from twython import Twython
 from twython import TwythonError
 import MeCab
 
-
 INITIAL_SINCE_ID = 1
 
 
@@ -82,70 +81,12 @@ def update_status(twitter, text):
 
 
 def rewrite(original_text, last_names, first_names):
-    replace_maps = []
-    name_index = 0
-
-    tagger = MeCab.Tagger("")
-
-    # unicode -> str
-    original_text_str = original_text.encode('utf-8')
-
-    node = tagger.parseToNode(original_text_str)
-
-    last_last_name = None
-    last_first_name = None
-
-    '''
-    replace_maps = [
-     [('sato',  None   ), ('kubota', 'manabu'   )],
-     [( None,  'jiro'  ), ('mori',   'yoshiyuki')],
-     [('kato', 'saburo'), ('sano',   'tomonori' )],
-    ]
-    '''
-    while node:
-        # str -> unicode
-        pattern = unicode(node.surface, 'utf-8')
-        posid = node.posid
-        # feature = unicode(node.feature, 'utf-8')
-        # logging.debug(u"surface:<{}> posid:<{}> feature:<{}>".format(pattern, posid, feature))
-
-        # last name (43)
-        if posid == 43:
-            last_last_name = pattern
-        # first name (44)
-        elif posid == 44:
-            last_first_name = pattern
-        # neither last name nor first name
-        else:
-            if last_last_name or last_first_name:
-                replace_map = map_for_pattern(replace_maps, last_last_name, last_first_name)
-
-                if not replace_map:
-                    print(u'new')
-                    last_name_repl = name_at_index(last_names, name_index)
-                    first_name_repl = name_at_index(first_names, name_index)
-                    name_index += 1
-                    
-                    map = [(last_last_name, last_first_name), (last_name_repl, first_name_repl)]
-                    replace_maps.append(map)
-                else:
-                    print(u'update')
-                    (map_index, map) = replace_map
-
-                    [unused_patterns, repls] = map
-                    updated_map = [(last_last_name, last_first_name), repls]
-
-                    replace_maps[map_index] = updated_map
-
-                last_last_name = None
-                last_first_name = None
-
-        node = node.next
-
     is_rewrited = False
     rewrited_text = None
 
-    print(replace_maps)
+    replace_maps = create_replace_maps(original_text, last_names, first_names)
+    # print(replace_maps)
+
     if 0 < len(replace_maps):
         is_rewrited = True
         rewrited_text = original_text
@@ -153,7 +94,8 @@ def rewrite(original_text, last_names, first_names):
         for replace_map in replace_maps:
             [(last_name_pattern, first_name_pattern),
              (last_name_repl, first_name_repl)] = replace_map
-            for (pattern, repl) in [(last_name_pattern, last_name_repl), (first_name_pattern, first_name_repl)]:
+            for (pattern, repl) in [(last_name_pattern, last_name_repl),
+                                    (first_name_pattern, first_name_repl)]:
                 logging.debug(u"pattern:{} repl:{}".format(pattern, repl))
                 if pattern:
                     rewrited_text = re.sub(pattern, repl, rewrited_text)
@@ -163,22 +105,88 @@ def rewrite(original_text, last_names, first_names):
     return (is_rewrited, rewrited_text)
 
 
-def map_for_pattern(replace_maps, last_name_pattern=None, first_name_pattern=None):
+def create_replace_maps(original_text, last_names, first_names):
+    """
+    returns maps between patterns and replacements.
+    replace_maps = [
+        [('sato',  None   ), ('kubota', 'manabu'   )],
+        [( None,  'jiro'  ), ('mori',   'yoshiyuki')],
+        [('kato', 'saburo'), ('sano',   'tomonori' )],
+    ]
+    """
+    replace_maps = []
+    name_index = 0
+    last_last_name = None
+    last_first_name = None
+
+    original_text_str = original_text.encode('utf-8')   # unicode -> str
+    tagger = MeCab.Tagger("")
+    node = tagger.parseToNode(original_text_str)
+
+    while node:
+        pattern = unicode(node.surface, 'utf-8')    # str -> unicode
+        posid = node.posid
+        # feature = unicode(node.feature, 'utf-8')
+        # logging.debug(u"surface:<{}> posid:<{}> feature:<{}>".format(pattern, posid, feature))
+
+        node = node.next
+
+        # last name (43)
+        if posid == 43:
+            last_last_name = pattern
+        # first name (44)
+        elif posid == 44:
+            last_first_name = pattern
+        # neither last name nor first name
+        else:
+            if not last_last_name and not last_first_name:
+                continue
+
+            replace_map = replace_map_for_pattern(replace_maps, last_last_name, last_first_name)
+
+            if not replace_map:
+                # print(u'new')
+                last_name_repl = name_at_index(last_names, name_index)
+                first_name_repl = name_at_index(first_names, name_index)
+                name_index += 1
+
+                replace_map = [(last_last_name, last_first_name),
+                               (last_name_repl, first_name_repl)]
+                replace_maps.append(replace_map)
+            else:
+                # print(u'update')
+                map_index = replace_maps.index(replace_map)
+
+                [(last_name_pattern, first_name_pattern), repls] = replace_map
+                updated_replace_map = [
+                    (last_last_name if last_last_name else last_name_pattern,
+                     last_first_name if last_first_name else first_name_pattern),
+                    repls]
+
+                replace_maps[map_index] = updated_replace_map
+
+            last_last_name = None
+            last_first_name = None
+
+    return replace_maps
+
+
+def replace_map_for_pattern(replace_maps, last_name_pattern=None, first_name_pattern=None):
     for replace_map in replace_maps:
-        map_index = replace_maps.index(replace_map)
         [(existing_last_name_pattern, existing_first_name_pattern),
          (last_name_repl, first_name_repl)] = replace_map
 
-        existed_in_last_name = False
+        found_last_name_pattern = False
+        found_first_name_pattern = False
+
         if existing_last_name_pattern and last_name_pattern:
-            existed_in_last_name = (existing_last_name_pattern == last_name_pattern) 
+            found_last_name_pattern = (existing_last_name_pattern == last_name_pattern)
 
-        existed_in_first_name = False
         if existing_first_name_pattern and first_name_pattern:
-            existed_in_first_name = (existing_first_name_pattern == first_name_pattern) 
+            found_first_name_pattern = (existing_first_name_pattern == first_name_pattern)
 
-        if existed_in_last_name or existed_in_first_name:
-            return (map_index, replace_map)
+        if (found_last_name_pattern or found_first_name_pattern):
+            return replace_map
 
     return None
 
