@@ -43,7 +43,7 @@ def start(source_screen_names, polling_interval, names,
                                       .format(since_ids[source_screen_name]))
                         break
 
-                    (is_rewrited, rewrited_text) = rewrite(text, names, True)
+                    (is_rewrited, rewrited_text) = rewrite(text, names)
                     log_status(status_id, text, is_rewrited, rewrited_text)
 
                     if is_rewrited:
