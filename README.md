@@ -41,7 +41,7 @@ kick
 test
 --
 ````
-pychecker *.py news/*.py
+pychecker *.py news/*.py tests/*.py
 py.test
 ````
 
