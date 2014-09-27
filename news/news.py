@@ -93,6 +93,8 @@ def rewrite(original_text, last_names, first_names):
 
     node = tagger.parseToNode(original_text_str)
 
+    possible_first_name = None
+
     while node:
         # str -> unicode
         surface = unicode(node.surface, 'utf-8')
@@ -100,14 +102,29 @@ def rewrite(original_text, last_names, first_names):
         # feature = unicode(node.feature, 'utf-8')
         # logging.debug(u"surface:<{}> posid:<{}> feature:<{}>".format(surface, posid, feature))
 
+        # last name (43)
         if posid == 43:
-            if not has_replace_map(replace_maps, surface):
-                replace_maps.append((surface, name_at_index(last_names, last_name_index)))
+            repl = repl_for_pattern(replace_maps, surface)
+            if not repl:
+                repl = name_at_index(last_names, last_name_index)
                 last_name_index += 1
+                replace_maps.append((surface, repl))
+
+            # prepare possible first name for future use
+            possible_first_name_index = last_names.index(repl)
+            possible_first_name = first_names[possible_first_name_index]
+        # first name (44)
         elif posid == 44:
-            if not has_replace_map(replace_maps, surface):
-                replace_maps.append((surface, name_at_index(first_names, first_name_index)))
-                first_name_index += 1
+            if not repl_for_pattern(replace_maps, surface):
+                first_name = possible_first_name
+                if not first_name:
+                    first_name = name_at_index(first_names, first_name_index)
+                    first_name_index += 1
+
+                replace_maps.append((surface, first_name))
+        # neither last name nor first name
+        else:
+            possible_first_name = None
 
         node = node.next
 
@@ -127,12 +144,12 @@ def rewrite(original_text, last_names, first_names):
     return (is_rewrited, rewrited_text)
 
 
-def has_replace_map(replace_maps, surface):
-    for (pattern, unused_repl) in replace_maps:
-        if pattern == surface:
-            return True
+def repl_for_pattern(replace_maps, pattern):
+    for (existing_pattern, existing_repl) in replace_maps:
+        if existing_pattern == pattern:
+            return existing_repl
 
-    return False
+    return None
 
 
 def name_at_index(names, index=0):
