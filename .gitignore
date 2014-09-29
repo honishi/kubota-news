@@ -1,6 +1,10 @@
 *.pyc
 .cache/
 *.log
+*.out
 
 *.configuration*
 !*.configuration.sample
+
+*.env*
+!*.env.sample

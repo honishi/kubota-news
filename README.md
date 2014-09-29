@@ -41,10 +41,18 @@ cp main.configuration.sample main.configuration
 vi main.configuration
 ````
 
-kick
+start & stop
 --
 ````
-./main.py
+./news.sh start
+./news.sh stop
+````
+
+monitoring example using cron
+--
+see `news.sh` inside for details of monitoring.
+````
+* * * * * /path/to/news/news.sh monitor >> /path/to/news/log/monitor.log 2>&1
 ````
 
 test
